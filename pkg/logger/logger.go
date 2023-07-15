@@ -20,11 +20,9 @@ func (hook *writerHook) Fire(entry *logrus.Entry) error {
 	if err != nil {
 		return err
 	}
-
 	for _, w := range hook.Writer {
 		w.Write([]byte(line))
 	}
-
 	return err
 }
 
@@ -35,19 +33,15 @@ func (hook *writerHook) Levels() []logrus.Level {
 var e *logrus.Entry
 
 type Logger struct {
-	entry *logrus.Entry
+	*logrus.Entry
 }
 
 func GetLogger() *Logger {
-	return &Logger{
-		entry: e,
-	}
+	return &Logger{e}
 }
 
 func (l *Logger) GetLoggerWithField(k string, v interface{}) *Logger {
-	return &Logger{
-		entry: l.entry.WithField(k, v),
-	}
+	return &Logger{l.WithField(k, v)}
 }
 
 func init() {
