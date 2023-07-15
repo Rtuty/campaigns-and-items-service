@@ -19,3 +19,8 @@ github.com/sirupsen/logrus
 "github.com/jackc/pgconn"
 "github.com/jackc/pgx/v4"
 ```
+
+**Router:**
+```
+"github.com/julienschmidt/httprouter"
+```
