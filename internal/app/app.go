@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 
@@ -34,18 +35,19 @@ func RunServiceInstance() {
 	}
 
 	// Подключаемся к postgresql
+	log.Info("getting postgresql client")
 	pgcli, err := pgclient.NewClient(ctx, 5, pgDataSource, log)
 	if err != nil {
 		log.Printf("get new postgresql client error: %v", err)
 	}
 
 	// Выполняем команду make из Makefile для запуска миграции postgres
-	var mgrCmd = exec.Command("make", "migration-up")
+	var mgrCmd = exec.Command("make", "migrate-up")
 	mgrCmd.Stderr = os.Stderr
 	mgrCmd.Stdout = os.Stdout
 
 	if err := mgrCmd.Run(); err != nil {
-		log.Fatalf("migration command execution error: %v", err)
+		log.Infof("migration command execution error: %v", err)
 	}
 
 	// Получаем интерфейс repository, который реализует функционал для работы с сущностями в среде postgresql
@@ -56,4 +58,13 @@ func RunServiceInstance() {
 	r := httprouter.New()
 
 	r.GET("/items/all", h.GetAllItems)
+	r.POST("/items/new", h.CreateNewItem)
+	r.PATCH("items/update", h.UpdateItem)
+	r.DELETE("items/delete/:id", h.DeleteItem)
+
+	// Запуск сервера
+	log.Info("starting server on 8080...")
+	if err = http.ListenAndServe(":8080", r); err != nil {
+		log.Infof("failed to start the server, error: %v", err)
+	}
 }

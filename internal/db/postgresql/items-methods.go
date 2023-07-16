@@ -77,8 +77,8 @@ func (d *db) ItemsHandleCUD(ctx context.Context, operation string, itm entities.
 		if _, err = t.Exec(ctx,
 			`insert into items 
 			(campaign_id, name, description, priority, removed, created_at)
-			values (?, ?, ?, ?, ?, ?)`,
-			itm.CampaignId, itm.Name, itm.Description, itm.Priority, itm.Removed, itm.CreatedAt); err != nil {
+			values (?, ?, ?, ?, ?, current_timestamp)`,
+			itm.CampaignId, itm.Name, itm.Description, itm.Priority, itm.Removed); err != nil {
 			d.logger.Warningf("items handler create method error: %v, transaction status error: %v", err, execErr)
 			return execErr
 		}

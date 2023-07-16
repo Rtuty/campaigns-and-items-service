@@ -48,7 +48,7 @@ func GetDataConnection() (dataSource, error) {
 		if value == "" {
 			return dataSource{}, errors.Errorf("invalid environment variable %s", v)
 		} else { // Если переменная окружения найдена - записываем результат в postgresCon
-			field := reflect.ValueOf(postgresCon).Elem().FieldByNameFunc(
+			field := reflect.ValueOf(&postgresCon).Elem().FieldByNameFunc(
 				func(fieldName string) bool {
 					return strings.EqualFold(fieldName, v)
 				})
