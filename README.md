@@ -1,3 +1,15 @@
+## How to launch CAIS (campaigns and items service)?\
+First of all, you should create a .env file in the root directory of the project,
+which will contain the following information:
+```dotenv
+HOST=
+PORT=
+USER=
+PASSWD=
+DBNAME=
+SSLMODE=
+```
+
 ## Drivers and tools
 ### Postgresql
 **1. Client:**
