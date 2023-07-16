@@ -1,3 +1,16 @@
+## Drivers and tools
+### Postgresql
+**1. Client:**
+```
+"github.com/jackc/pgconn"
+"github.com/jackc/pgx/v4"
+```
+
+**2. Migrations:**
+```
+github.com/golang-migrate/migrate
+```
+
 ### Packages:
 
 **Environment variables:**
@@ -12,12 +25,6 @@
 **Logging:**
 ```
 github.com/sirupsen/logrus
-```
-
-**Postgresql client:**
-```
-"github.com/jackc/pgconn"
-"github.com/jackc/pgx/v4"
 ```
 
 **Router:**
