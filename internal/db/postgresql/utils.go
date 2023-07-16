@@ -1,7 +1,10 @@
 package db
 
 import (
+	"context"
+
 	"cais/internal/entities"
+
 	"github.com/jackc/pgx/v4"
 )
 
@@ -48,8 +51,42 @@ func convertEntity[T entities.Item | entities.Campaign](entity []interface{}) ([
 		if e1, ok := e.(T); ok {
 			entities = append(entities, e1)
 		} else {
-			return make([]T, 0), convertError
+			return make([]T, 0), convertErr
 		}
 	}
 	return entities, nil
+}
+
+// executeItemsQuery выполняет запрос, который возвращает массив сущностей items
+func (d *db) executeItemsQuery(ctx context.Context, query string, args ...interface{}) ([]entities.Item, error) {
+	t, err := d.client.Begin(ctx)
+	if err != nil {
+		d.logger.Warningf("execute query method error: %v, transaction status error: %s", err, beginErr)
+		return nil, err
+	}
+
+	rows, err := t.Query(ctx, query, args...)
+	if err != nil {
+		d.logger.Warningf("execute query method error: %v, transaction status error: %s", err, execErr)
+		return nil, err
+	}
+
+	scRows, err := ScanRows(rows, "items")
+	if err != nil {
+		d.logger.Warningf("execute query method error: %v, transaction status error: %s", err, scanRowErr)
+		return nil, err
+	}
+
+	items, err := convertEntity[entities.Item](scRows)
+	if err != nil {
+		d.logger.Warningf("execute query method error: %v, transaction status error: %s", err, convertErr)
+		return nil, err
+	}
+
+	if err = t.Commit(ctx); err != nil {
+		d.logger.Warningf("execute query method error: %v, transaction status error: %s", err, commitErr)
+		return nil, err
+	}
+
+	return items, nil
 }

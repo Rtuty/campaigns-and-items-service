@@ -1,8 +1,11 @@
 package db
 
 import (
-	"cais/internal/entities"
 	"context"
+	"fmt"
+
+	"cais/internal/entities"
+
 	"github.com/pkg/errors"
 )
 
@@ -17,6 +20,25 @@ var (
 	duplicateErr = errors.New("object being created already exists in the database")
 )
 
+var getItemsQuery = `select id,
+					campaign_id,
+					name,
+					description,
+					priority,
+					removed,
+					created_at
+			 from items`
+
+// GetAllItems возвращает список всех сущностей items из БД
+func (d *db) GetAllItems(ctx context.Context) ([]entities.Item, error) {
+	return d.executeItemsQuery(ctx, getItemsQuery)
+}
+
+// GetItemsByCampaignId возвращает список всех сущностей items из БД, по заданному id компании
+func (d *db) GetItemsByCampaignId(ctx context.Context, id string) ([]entities.Item, error) {
+	return d.executeItemsQuery(ctx, getItemsQuery+" where campaign_id = ?", id)
+}
+
 // ItemsHandleCUD обрабатывает методы CREATE, UPDATE, DELETE для сущности item. Данный метод реализует паттерн абстрактная фабрика
 func (d *db) ItemsHandleCUD(ctx context.Context, operation string, itm entities.Item) error {
 	// Открываем транзакцию
@@ -26,7 +48,9 @@ func (d *db) ItemsHandleCUD(ctx context.Context, operation string, itm entities.
 		return beginErr
 	}
 
-	// При редактировании данных в postgresql происходит установка уровня изоляции транзакции
+	/* В уровне изоляции SERIALIZABLE все операции чтения и записи блокируются для других транзакций до завершения текущей.
+	Это означает, что другие транзакции не могут выполнить чтение или запись в те же данные, с которыми работает текущая транзакция, пока она не будет завершена.
+	Данный механизм обеспечивает полную изоляцию от параллельно выполняющихся транзакций. */
 	if _, err = t.Exec(ctx, "set transaction isolation level serializable"); err != nil {
 		d.logger.Warningf("Items Handle CUD error: %v, transaction status error: %v", err, execErr)
 		return execErr
@@ -60,14 +84,35 @@ func (d *db) ItemsHandleCUD(ctx context.Context, operation string, itm entities.
 		}
 
 	case "update":
+		if _, err = t.Exec(ctx,
+			`update items 
+				set campaign_id = ?, name = ?, description = ?, priority = ?, removed = ?, created_at = ?
+				where id = ?`,
+			itm.CampaignId, itm.Name, itm.Description, itm.Priority, itm.Removed, itm.CreatedAt, itm.Id); err != nil {
+			d.logger.Warningf("items handler update method error: %v, transaction status error: %s", err, execErr)
+			return execErr
+		}
 
 	case "delete":
+		if _, err = t.Exec(ctx, "delete from items where id = ?", itm.Id); err != nil {
+			d.logger.Warningf("tems handler delete method error: %v, transaction status error: %s", err, execErr)
+			return execErr
+		}
 
+	default:
+		return fmt.Errorf("operation named '%s' not found", operation)
 	}
 
 	// Подтверждаем тразакцию, фиксируются изменения
 	if err = t.Commit(ctx); err != nil {
+		d.logger.Warningf("Items Handle CUD error: %v, transaction status error: %v", err, commitErr)
 		return commitErr
+	}
+
+	// Устанавливаем дефолтный уровень изоляции, после завершения транзакции
+	if _, err = t.Exec(ctx, "set transaction isolation level default"); err != nil {
+		d.logger.Warningf("Items Handle CUD error: %v, transaction status error: %v", err, execErr)
+		return execErr
 	}
 
 	return nil

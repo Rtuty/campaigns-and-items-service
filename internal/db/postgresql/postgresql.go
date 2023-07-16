@@ -8,11 +8,10 @@ import (
 )
 
 type Storage interface {
-	NewItem(ctx context.Context, itm entities.Item) (id int64, err error)
-	UpdateItem(ctx context.Context, itm entities.Item) error
-	DeleteItem(ctx context.Context, id string) error
+	ItemsHandleCUD(ctx context.Context, operation string, itm entities.Item) error
 
 	GetAllItems(ctx context.Context) ([]entities.Item, error)
+	GetItemsByCampaignId(ctx context.Context, id string) ([]entities.Item, error)
 }
 
 type db struct {
