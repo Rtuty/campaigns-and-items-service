@@ -40,6 +40,25 @@ func (ih *itemHandler) GetAllItems(w http.ResponseWriter, r *http.Request, ps ht
 	ih.writeJSONResponse(w, http.StatusOK, items)
 }
 
+// GetAllItems получить список всех item (GET)
+func (ih *itemHandler) GetItemsByCampaignId(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	id, err := strconv.Atoi(ps.ByName("id"))
+	if err != nil {
+		ih.log.Error(err)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
+	items, err := ih.db.GetItemsByCampaignId(ih.ctx, int64(id))
+	if err != nil {
+		ih.log.Error(err)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
+	ih.writeJSONResponse(w, http.StatusOK, items)
+}
+
 // CreateNewItem создает новый item, возвращает message с информацией о статусе выполнения (POST)
 func (ih *itemHandler) CreateNewItem(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	var item entities.Item

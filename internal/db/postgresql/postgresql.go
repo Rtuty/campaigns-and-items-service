@@ -11,7 +11,7 @@ type Storage interface {
 	ItemsHandleCUD(ctx context.Context, operation string, itm entities.Item) error
 
 	GetAllItems(ctx context.Context) ([]entities.Item, error)
-	GetItemsByCampaignId(ctx context.Context, id string) ([]entities.Item, error)
+	GetItemsByCampaignId(ctx context.Context, id int64) ([]entities.Item, error)
 }
 
 type db struct {

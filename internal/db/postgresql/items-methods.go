@@ -35,11 +35,11 @@ func (d *db) GetAllItems(ctx context.Context) ([]entities.Item, error) {
 }
 
 // GetItemsByCampaignId возвращает список всех сущностей items из БД, по заданному id компании
-func (d *db) GetItemsByCampaignId(ctx context.Context, id string) ([]entities.Item, error) {
+func (d *db) GetItemsByCampaignId(ctx context.Context, id int64) ([]entities.Item, error) {
 	return d.executeItemsQuery(ctx, getItemsQuery+" where campaign_id = ?", id)
 }
 
-// ItemsHandleCUD обрабатывает методы CREATE, UPDATE, DELETE для сущности item. Данный метод реализует паттерн абстрактная фабрика
+// ItemsHandleCUD обрабатывает методы CREATE, UPDATE, DELETE для сущности item. Данный метод реализует паттерн фабрика
 func (d *db) ItemsHandleCUD(ctx context.Context, operation string, itm entities.Item) error {
 	// Открываем транзакцию
 	t, err := d.client.Begin(ctx)
