@@ -1,19 +1,16 @@
 package app
 
 import (
+	"cais/pkg/clickapi"
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 
 	"cais/internal/api"
 	"cais/internal/db/postgresql"
-	"cais/migrations"
 	"cais/pkg/logger"
 	"cais/pkg/pgclient"
 
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/joho/godotenv"
 	"github.com/julienschmidt/httprouter"
 )
@@ -43,23 +40,21 @@ func RunServiceInstance() {
 		log.Printf("get new postgresql client error: %v", err)
 	}
 
+	defer pgcli.Close()
+
 	// Миграция up postgresql (встраивается в бинарник исполняемого файла)
-	d, err := iofs.New(migrations.FS, "postgres")
-	if err != nil {
-		log.Fatalf("migration command execution error: %v", err)
+	if err := pgclient.PostgresMigration(pgDataSource, "up"); err != nil {
+		log.Printf("get new postgresql client error: %v", err)
 	}
 
-	m, err := migrate.NewWithSourceInstance("iofs", d, fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s?sslmode=disable", // todo: не нравится интеграция строки с подключением
-		pgDataSource.User, pgDataSource.Passwd, pgDataSource.Host, pgDataSource.Port, pgDataSource.Dbname,
-	))
-
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange { // если нет изменений, то пропускаем миграцию (не ошибка)
-		log.Fatalf("migration up error: %v", err)
+	// Получаем подключение к clickhouse
+	clHs, err := clickapi.ClickHouseConnection(ctx, log)
+	if err != nil {
+		log.Printf("get new clickhouse connection error: %v", err)
 	}
 
 	// Получаем интерфейс repository, который реализует функционал для работы с сущностями в среде postgresql
-	var repo = db.NewRepository(pgcli, log)
+	var repo = db.NewRepository(pgcli, log, clHs)
 
 	// Обработчик для роутера
 	var h = api.NewItemHandler(ctx, repo, log)
