@@ -8,13 +8,19 @@ import (
 	"strconv"
 )
 
+type RedisEnvars struct {
+	Addr string
+	Pass string
+	Db   string
+}
+
 // NewRedisClient подключенает redis, возвращает клиент
-func NewRedisClient(ctx context.Context, log *logger.Logger) (rdCl *redis.Client, err error) {
-	addr := os.Getenv("REDIS_ADDR")
+func NewRedisClient(ctx context.Context, log *logger.Logger, re RedisEnvars) (rdCl *redis.Client, err error) {
+	addr := os.Getenv(re.Addr)
 
-	passwd := os.Getenv("REDIS_PASS")
+	passwd := os.Getenv(re.Pass)
 
-	db, err := strconv.Atoi(os.Getenv("REDIS_DB"))
+	db, err := strconv.Atoi(os.Getenv(re.Db))
 	if err != nil {
 		log.Errorf("env get redis db error: %v", err)
 		return nil, err

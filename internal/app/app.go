@@ -32,6 +32,7 @@ func init() {
 type InstanceOpts struct {
 	Port      string
 	CfgPgVars []string
+	RedisVar  caching.RedisEnvars
 }
 
 func RunServiceInstance(opts InstanceOpts) {
@@ -70,7 +71,7 @@ func RunServiceInstance(opts InstanceOpts) {
 	go func() {
 		// Получаем клиент redis
 		log.Info("getting redis client")
-		rdCl, err := caching.NewRedisClient(ctx, log)
+		rdCl, err := caching.NewRedisClient(ctx, log, opts.RedisVar)
 		if err != nil {
 			log.Warningf("redis client connection error: %v", err)
 		}
