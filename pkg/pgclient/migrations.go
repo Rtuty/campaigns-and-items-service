@@ -5,19 +5,21 @@ import (
 	"fmt"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
-	"log"
 )
 
 func PostgresMigration(ds dataSource, cmd string) error {
 	d, err := iofs.New(migrations.FS, "postgres")
 	if err != nil {
-		log.Fatalf("migration command execution error: %v", err)
+		return fmt.Errorf("migration command execution error: %v", err)
 	}
 
 	m, err := migrate.NewWithSourceInstance("iofs", d, fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		ds.User, ds.Passwd, ds.Host, ds.Port, ds.Dbname,
 	))
+	if err != nil {
+		return fmt.Errorf("new with source intasce error: %v", err)
+	}
 
 	switch cmd {
 	case "up":

@@ -38,10 +38,8 @@ FAQ: Как работает подключение к базе данных pos
 
 type dataSource struct{ Host, Port, User, Passwd, Dbname string }
 
-func GetDataConnection() (dataSource, error) {
+func GetPgDataConnection(envVars []string) (dataSource, error) {
 	var postgresCon = dataSource{}
-
-	envVars := []string{"HOST", "PORT", "USER", "PASSWD", "DBNAME"} // Данные, которые хотим получить из переменных окружения
 
 	for _, v := range envVars {
 		value := os.Getenv(v)
@@ -61,22 +59,23 @@ func GetDataConnection() (dataSource, error) {
 	return postgresCon, nil
 }
 
-func NewClient(ctx context.Context, maxAttempts int, ds dataSource, log *logger.Logger) (pool *pgxpool.Pool, err error) {
-	dsn := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s", ds.User, ds.Passwd, ds.Host, ds.Port, ds.Dbname)
-	err = doWithTries(func() error {
-		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-		defer cancel()
+func NewPostgresClient(ctx context.Context, maxAttempts int, ds dataSource, log *logger.Logger) (pool *pgxpool.Pool, err error) {
+	if err := doWithTries(
+		func() error {
+			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 
-		pool, err = pgxpool.Connect(ctx, dsn)
-		if err != nil {
-			return err
-		}
+			defer cancel()
 
-		return nil
-	}, maxAttempts, 5*time.Second)
+			pool, err = pgxpool.Connect(ctx, fmt.Sprintf("postgresql://%s:%s@%s:%s/%s", ds.User, ds.Passwd, ds.Host, ds.Port, ds.Dbname))
+			if err != nil {
+				return fmt.Errorf("postgres pool connection error: %v", err)
+			}
 
-	if err != nil {
-		log.Fatal("error do with tries postgresql")
+			return nil
+		},
+		maxAttempts, 5*time.Second); err != nil {
+		log.Errorf("do with tries new postgresql client func error: %v", err)
+		return nil, err
 	}
 
 	return pool, nil

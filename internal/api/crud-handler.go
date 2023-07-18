@@ -40,7 +40,7 @@ func (ih *itemHandler) GetAllItems(w http.ResponseWriter, r *http.Request, ps ht
 	ih.writeJSONResponse(w, http.StatusOK, items)
 }
 
-// GetAllItems получить список всех item (GET)
+// GetItemsByCampaignId получить список всех item (GET)
 func (ih *itemHandler) GetItemsByCampaignId(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	id, err := strconv.Atoi(ps.ByName("id"))
 	if err != nil {
